@@ -24,7 +24,7 @@ import config
 from config import get_config, get_jmx_status_path, _windows_commondata_path
 
 from util import get_os, plural
-from utils.ntp import get_ntp_datadog_host
+from utils.ntp import get_ntp_args
 from utils.platform import Platform
 from utils.pidfile import PidFile
 from utils.profile import pretty_statistics
@@ -34,7 +34,7 @@ STATUS_OK = 'OK'
 STATUS_ERROR = 'ERROR'
 STATUS_WARNING = 'WARNING'
 
-NTP_OFFSET_THRESHOLD = 600
+NTP_OFFSET_THRESHOLD = 60
 
 
 log = logging.getLogger(__name__)
@@ -101,8 +101,8 @@ def logger_info():
 
 
 def get_ntp_info():
-    ntp_host = get_ntp_datadog_host()
-    ntp_offset = ntplib.NTPClient().request(ntp_host, version=3).offset
+    req_args = get_ntp_args()
+    ntp_offset = ntplib.NTPClient().request(**req_args).offset
     if abs(ntp_offset) > NTP_OFFSET_THRESHOLD:
         ntp_styles = ['red', 'bold']
     else:

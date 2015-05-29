@@ -20,7 +20,7 @@ from checks import (
 from checks.collector import Collector
 from tests.checks.common import load_check
 from util import get_hostname
-from utils.ntp import get_ntp_datadog_host
+from utils.ntp import get_ntp_args
 
 logger = logging.getLogger()
 
@@ -255,9 +255,7 @@ class TestCore(unittest.TestCase):
         del env["HTTPS_PROXY"]
 
     def test_min_collection_interval(self):
-        if os.environ.get('TRAVIS', False):
-            raise SkipTest('ntp server times out too often on Travis')
-        config = {'instances': [{'host': get_ntp_datadog_host(), 'timeout': 1}], 'init_config': {}}
+        config = {'instances': [{}], 'init_config': {}}
 
         agentConfig = {
             'version': '0.1',
@@ -291,7 +289,7 @@ class TestCore(unittest.TestCase):
         metrics = check.get_metrics()
         self.assertTrue(len(metrics) > 0, metrics)
 
-        config = {'instances': [{'host': get_ntp_datadog_host(), 'timeout': 1, 'min_collection_interval':3}], 'init_config': {}}
+        config = {'instances': [{'min_collection_interval':3}], 'init_config': {}}
         check = load_check('ntp', config, agentConfig)
         check.run()
         metrics = check.get_metrics()
@@ -304,7 +302,7 @@ class TestCore(unittest.TestCase):
         metrics = check.get_metrics()
         self.assertTrue(len(metrics) > 0, metrics)
 
-        config = {'instances': [{'host': get_ntp_datadog_host(), 'timeout': 1, 'min_collection_interval': 12}], 'init_config': {'min_collection_interval':3}}
+        config = {'instances': [{'min_collection_interval': 12}], 'init_config': {'min_collection_interval':3}}
         check = load_check('ntp', config, agentConfig)
         check.run()
         metrics = check.get_metrics()
@@ -320,6 +318,52 @@ class TestCore(unittest.TestCase):
         check.run()
         metrics = check.get_metrics()
         self.assertTrue(len(metrics) > 0, metrics)
+
+    def test_ntp_global_settings(self):
+        config = {'instances': [{
+            "host": "foo.com",
+            "port": "bar",
+            "version": 42,
+            "timeout": 13.37}],
+            'init_config': {}}
+
+        agentConfig = {
+            'version': '0.1',
+            'api_key': 'toto'
+        }
+
+        # default min collection interval for that check was 20sec
+        check = load_check('ntp', config, agentConfig)
+        check.run()
+
+        ntp_args = get_ntp_args()
+
+        self.assertEqual(ntp_args["host"], "foo.com")
+        self.assertEqual(ntp_args["port"], "bar")
+        self.assertEqual(ntp_args["version"], 42)
+        self.assertEqual(ntp_args["timeout"], 13.37)
+
+        config = {'instances': [{}], 'init_config': {}}
+
+        agentConfig = {
+            'version': '0.1',
+            'api_key': 'toto'
+        }
+
+        # default min collection interval for that check was 20sec
+        check = load_check('ntp', config, agentConfig)
+        try:
+            check.run()
+        except Exception:
+            pass
+
+        ntp_args = get_ntp_args()
+
+        self.assertTrue(ntp_args["host"].endswith("datadog.pool.ntp.org"))
+        self.assertEqual(ntp_args["port"], "ntp")
+        self.assertEqual(ntp_args["version"], 3)
+        self.assertEqual(ntp_args["timeout"], 1.0)
+
 
 
 class TestAggregator(unittest.TestCase):
