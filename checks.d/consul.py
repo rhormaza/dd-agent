@@ -21,7 +21,7 @@ class ConsulCheck(AgentCheck):
         self._last_known_leader = None
 
     def consul_request(self, instance, endpoint):
-        url = "{}{}".format(instance.get('url'), endpoint)
+        url = "{0}{1}".format(instance.get('url'), endpoint)
         try:
             resp = requests.get(url)
         except requests.exceptions.Timeout:
@@ -46,7 +46,7 @@ class ConsulCheck(AgentCheck):
         local_config = self._get_local_config(instance)
         agent_addr = local_config.get('Config', {}).get('AdvertiseAddr')
         agent_port = local_config.get('Config', {}).get('Ports', {}).get('Server')
-        agent_url = "{}:{}".format(agent_addr, agent_port)
+        agent_url = "{0}:{1}".format(agent_addr, agent_port)
         self.log.debug("Agent url is %s" % agent_url)
         return agent_url
 
@@ -139,11 +139,11 @@ class ConsulCheck(AgentCheck):
                 if status is None:
                     continue
 
-                tags = ["check:{}".format(check["CheckID"])]
+                tags = ["check:{0}".format(check["CheckID"])]
                 if check["ServiceName"]:
-                    tags.append("service:{}".format(check["ServiceName"]))
+                    tags.append("service:{0}".format(check["ServiceName"]))
                 if check["ServiceID"]:
-                    tags.append("service-id:{}".format(check["ServiceID"]))
+                    tags.append("service-id:{0}".format(check["ServiceID"]))
 
             services = self.get_services_in_cluster(instance)
             self.service_check(self.HEALTH_CHECK, status, tags=tags)
